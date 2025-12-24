@@ -14,6 +14,7 @@ namespace Server.Custom.DefenderOfTheRealm
         public string Name; <-- item name
         public bool Hueable; <-- sets default hue for the npc faction
         public int Hue <-- 0 for faction items, hue for items with hardcoded hues;
+        public object[] Args; <-- sets amount of items
          */
         public static RewardInfo[] CommonRewards = new RewardInfo[]
         {
@@ -31,7 +32,8 @@ namespace Server.Custom.DefenderOfTheRealm
             new RewardInfo(typeof(EtherealReptalon), 500, 0x2D95, "Ethereal Reptalon",true,0),
             new RewardInfo(typeof(EtherealHorse), 250, 0x20DD, "Ethereal Horse",true,0),
             new RewardInfo(typeof(EtherealLlama), 250, 0x20F6, "Ethereal Llama",true,0),
-            new RewardInfo(typeof(EtherealOstard), 250, 0x2135, "Ethereal Ostard",true,0)
+            new RewardInfo(typeof(EtherealOstard), 250, 0x2135, "Ethereal Ostard",true,0),
+            new RewardInfo(typeof(ArcaneDust), 50, 12265, "100 Arcane Dust",false,33,100)
         };
 
         public static RewardInfo[] DefenderRewards = new RewardInfo[]
@@ -52,6 +54,16 @@ namespace Server.Custom.DefenderOfTheRealm
             new RewardInfo(typeof(Artifact_ScourgeOfTheRealmGorget), 900, 0x1413, "Scourge's Gorget",true,0),
             new RewardInfo(typeof(Artifact_ScourgeOfTheRealmHelmet), 900, 0x1412, "Scourge's Helmet",true,0),
             new RewardInfo(typeof(Artifact_ScourgeOfTheRealmLeggings), 1000, 0x46AA, "Scourge's Leggings",true,0)
+        };
+
+        public static RewardInfo[] ShadowbrokerRewards = new RewardInfo[]
+        {
+            new RewardInfo(typeof(Artifact_ShadowBrokerArms), 900, 0x13cd, "Shadow Broker Arms",true,0),
+            new RewardInfo(typeof(Artifact_ShadowBrokerTunic), 1000, 0x13CC, "Shadow Broker Tunic",true,0),
+            new RewardInfo(typeof(Artifact_ShadowBrokerGloves), 900, 0x13C6, "Shadow Broker Gloves",true,0),
+            new RewardInfo(typeof(Artifact_ShadowBrokerGorget), 900, 0x13C7, "Shadow Broker Gorget",true,0),
+            new RewardInfo(typeof(Artifact_ShadowBrokerCap), 900, 0x1DB9, "Shadow Broker Cap",true,0),
+            new RewardInfo(typeof(Artifact_ShadowBrokerLeggings), 1000, 0x13D2, "Shadow Broker Leggings",true,0)
         };
     }
 }

@@ -21,13 +21,48 @@ namespace Server.Misc
     {
 		public static string Version()
 		{
-			return "Version: Sacrifice (7 October 2025)";
+			return "Version: Humility (20 December 2025)";
 		}
 
 		public static string Versions()
         {
 			string versionTEXT = ""
+        
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        + "Humility - 20 December 2025<br>"
+
+        + "<br>"
+
+        + "New Features & Quality of Life<br>"
+        + "* Added a super endgame boss to the underworld. RIP Ozzy.<br>"
+        + "* Added a set of endgame weapons aqquired through a quest.<br>"
+        + "* Alchemy rucksacks now have an 'organize items' menu.<br>"
+        + "* Contraband system has been integrated into the vow reward system.<br>"
+        + "* Improved the default values of several settings in the settings.cs file.<br>"
+        + "* Dye extractor tubs can now be bought from tailors.<br>"
+        + "* Elemental spellbooks now show the shortcut for each spel.l<br>"
+        + "<br>"
+
+        + "Balance Changes<br>"
+        + "* Completing a vow grants proper karma.<br>"
+        + "* Marks of Honor/Scourge are now awarded independent on the karma of the killed creature.<br>"
+        + "* Tweaks to artifact bonuses.<br>"
+        + "* Beeswax base cost has been reduced to 333 (from 1k).<br>"
+        + "* Necromancer reagent bags no longer have witch potion reagents.<br>"
+        + "* All robes can now be turned into jedi/syth robes.<br>"
+        + "<br>"
+
+        + "Bug Fixes<br>"
+        + "* Sanctuary can now be cast from within dungeon dwellings.<br>"
+        + "* Fixed the requirement to become a priest via mallet.<br>"
+        + "* Shields can now be enchanted with spell channeling again.<br>"
+        + "* Fixed a server crash related to the museum book questline.<br>"
+        + "* Fixed the LMC calculation on various spell types.<br>"
+        + "* Fixed a crash that could happen when attempting to secure an item in a house.<br>"
+        + "<br>"
+
+        + sepLine()
        
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

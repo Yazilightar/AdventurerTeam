@@ -19,9 +19,8 @@ namespace Server.Items
 			Attributes.BonusHits = 5;
 			Attributes.RegenHits = 5;
 			Attributes.Luck = 70;
-			SkillBonuses.SetValues( 0, SkillName.Swords, 10 );
-			SkillBonuses.SetValues( 1, SkillName.Parry, 10 );
-			SkillBonuses.SetValues( 2, SkillName.Tactics, 10 );
+			SkillBonuses.SetValues( 1, SkillName.Parry, 15 );
+			SkillBonuses.SetValues( 2, SkillName.Tactics, 15 );
 			ArtifactLevel = 2;
 			Server.Misc.Arty.ArtySetup( this, 10, "" );
 		}

@@ -526,6 +526,14 @@ namespace Server.Mobiles
 			set { m_SummonEnd = value; }
 		}
 
+		private bool m_LeechImmune; 
+		public bool LeechImmune
+		{
+		    get { return m_LeechImmune; }
+		    set { m_LeechImmune = value; }
+		}
+
+
 		#region Bonding
 		public const bool BondingEnabled = true;
 
@@ -6317,7 +6325,8 @@ namespace Server.Mobiles
 			int x = System.Math.Abs( this.X - attacker.X );
 			int y = System.Math.Abs( this.Y - attacker.Y );
 
-			if ( m_Coins > 0 && x < 2 && y < 2 && attacker is PlayerMobile && stealing >= 20.0 && level < stealing && snooping > Utility.RandomMinMax(20, 126) )
+			if ( m_Coins > 0 && x < 2 && y < 2 && attacker is PlayerMobile && ((PlayerMobile)attacker).NpcGuild == NpcGuild.ThievesGuild 
+				&& stealing >= 50.0 && level < stealing && snooping > Utility.RandomMinMax(20, 126) )
 			{
 				int coins = m_Coins * ( 1 - ( level / stealing ) );
 				if ( coins < 1 )
@@ -6326,18 +6335,12 @@ namespace Server.Mobiles
 				coins = Utility.RandomMinMax( 1, coins );
 
 				m_Coins = m_Coins - coins;
+
 				if ( m_Coins < 0 )
 					m_Coins = 0;
-
-				if ( m_CoinType == "xormite" )
-					attacker.AddToBackpack( new DDXormite( coins ) );
-				else if ( m_CoinType == "crystals" )
-					attacker.AddToBackpack( new Crystals( coins ) );
-				else if ( m_CoinType == "jewels" )
-					attacker.AddToBackpack( new DDJewels( coins ) );
-				else
-					attacker.AddToBackpack( new Gold( coins ) );
-
+				
+				attacker.AddToBackpack( new MarksOfTheShadowbroker( coins ) );	
+				
 				string stole = "stolen";
 				switch ( Utility.RandomMinMax( 0, 7 ) ) 
 				{
@@ -6350,7 +6353,7 @@ namespace Server.Mobiles
 					case 7: stole = "snatched"; break;
 				}
 
-				attacker.SendMessage( "You " + stole + " " + coins + " " + m_CoinType + "!" );
+				attacker.SendMessage( "You " + stole + " " + coins + " " + "Marks of the Shadow Broker!" );
 
 				if ( this.Karma > 0 )
 					Titles.AwardKarma( attacker, -coins, false );

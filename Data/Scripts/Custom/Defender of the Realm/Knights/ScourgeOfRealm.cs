@@ -32,21 +32,12 @@ namespace Server.Custom.DefenderOfTheRealm.Scourge
             }
             AddItem( new Boots( Utility.RandomBirdHue() ) );
             AddItem( new Cloak( Utility.RandomBirdHue() ) );
-            Item chest = new PlateChest();
-            chest.Hue = 0x26;
-            AddItem(chest);
-            Item legs = new PlateLegs();
-            legs.Hue = 0x26;
-            AddItem(legs);
-            Item arms = new PlateArms();
-            arms.Hue = 0x26;
-            AddItem(arms);
-            Item gloves = new PlateGloves();
-            gloves.Hue = 0x26;
-            AddItem(gloves);
-            Item gorget = new PlateGorget();
-            gorget.Hue = 0x26;
-            AddItem(gorget);
+            AddItem( new Artifact_ScourgeOfTheRealmArms());
+            AddItem( new Artifact_ScourgeOfTheRealmChestpiece());
+            AddItem( new Artifact_ScourgeOfTheRealmGloves());
+            AddItem( new Artifact_ScourgeOfTheRealmGorget());
+            AddItem( new Artifact_ScourgeOfTheRealmHelmet());
+            AddItem( new Artifact_ScourgeOfTheRealmLeggings());
         }
 
         public override void OnMovement( Mobile m, Point3D oldLocation )
@@ -188,13 +179,13 @@ namespace Server.Custom.DefenderOfTheRealm.Scourge
           
             if( e.Mobile.InRange( this, 4 ))
 			{
-			    if ( ( e.Speech.ToLower() == "reward" ) )
+			    if ( e.Speech.IndexOf("reward") >= 0 )
 			    {
-			        if (e.Speech.IndexOf("reward") >= 0)
+			        if (from.Karma < 0)
                     {
                         if (from.Karma < 0)
                         {
-                            from.SendGump(new Server.Custom.DefenderOfTheRealm.RewardGump(from, false, 0));
+                            from.SendGump(new Server.Custom.DefenderOfTheRealm.RewardGump(from, 2, 0));
                             Say("These are the rewards I can offer thee.");
                         }
                         else

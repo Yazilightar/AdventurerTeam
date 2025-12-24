@@ -33,21 +33,12 @@ namespace Server.Custom.DefenderOfTheRealm.Knight
             }
             AddItem( new Boots( Utility.RandomBirdHue() ) );
             AddItem( new Cloak( Utility.RandomBirdHue() ) );
-            Item chest = new PlateChest();
-            chest.Hue = 0x35;
-            AddItem(chest);
-            Item legs = new PlateLegs();
-            legs.Hue = 0x35;
-            AddItem(legs);
-            Item arms = new PlateArms();
-            arms.Hue = 0x35;
-            AddItem(arms);
-            Item gloves = new PlateGloves();
-            gloves.Hue = 0x35;
-            AddItem(gloves);
-            Item gorget = new PlateGorget();
-            gorget.Hue = 0x35;
-            AddItem(gorget);
+            AddItem( new Artifact_DefenderOfTheRealmArms());
+            AddItem( new Artifact_DefenderOfTheRealmChestpiece());
+            AddItem( new Artifact_DefenderOfTheRealmGloves());
+            AddItem( new Artifact_DefenderOfTheRealmGorget());
+            AddItem( new Artifact_DefenderOfTheRealmHelmet());
+            AddItem( new Artifact_DefenderOfTheRealmLeggings());
         }
 
         public override void OnMovement( Mobile m, Point3D oldLocation )
@@ -92,13 +83,13 @@ namespace Server.Custom.DefenderOfTheRealm.Knight
           
             if( e.Mobile.InRange( this, 4 ))
 			{
-			    if ( ( e.Speech.ToLower() == "reward" ) )
+			    if ( e.Speech.IndexOf("reward") >= 0 )
 			    {
-			        if (e.Speech.IndexOf("reward") >= 0)
+			        if (from.Karma > 0)
                     {
                         if (from.Karma > 0)
                         {
-                            from.SendGump(new Server.Custom.DefenderOfTheRealm.RewardGump(from, true, 0));
+                            from.SendGump(new Server.Custom.DefenderOfTheRealm.RewardGump(from, 1, 0));
                             Say("These are the rewards I can offer thee.");
                         }
                         else

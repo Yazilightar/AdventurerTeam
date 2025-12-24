@@ -15,7 +15,7 @@ namespace Server.Items
 			Hue = 0x835;
 			Name = "Helm of the Cimmerian";
 			Attributes.BonusStam = 5;
-			SkillBonuses.SetValues( 0, SkillName.Swords, 5 );
+			SkillBonuses.SetValues( 0, SkillName.Tactics, 5 );
 			Attributes.DefendChance = 30;
 			PhysicalBonus = 20;
 			ArtifactLevel = 2;
