@@ -22,111 +22,253 @@ namespace Server.Scripts.Custom
     [CorpseName("an adventurer corpse")]
     public class AdventurerTeam : BaseCreature
     {
-        #region Dialogue Data (Static)
+        #region Dialogue Data (Static & Expanded)
+        // [Optimization Note] 
+        // Using static arrays ensures strings are loaded into memory only once, shared by all NPCs.
+        // Impact on memory is negligible (~4KB text). Selection overhead is O(1).
+
         private static readonly string[] FriendlyChat = new string[]
         {
             "The wyrms in the deep caves grow bolder each day...",
             "I barely escaped from a pack of dire wolves yesterday.",
-            "These lands are cursed, I tell you.",
+            "These lands are cursed, I tell you. Evil stirs in the shadows.",
+            "The undead rise more frequently near the old crypts.",
+            "I saw a dragon's shadow pass overhead last night.",
+            "Careful where you tread - traps abound in ancient ruins.",
+            "The forest trolls have been raiding caravans again.",
+            "They say a forgotten tomb lies beneath the old keep.",
             "I seek a legendary blade, lost to time.",
-            "Careful where you tread - traps abound.",
+            "Ancient treasures await those brave enough to claim them.",
+            "A merchant spoke of ruins filled with gold and jewels.",
+            "The old wizard's tower supposedly holds great power.",
+            "I heard whispers of a hidden vault in the mountains.",
+            "My companions fell to an ambush three days past.",
+            "I seek fellow brave souls to delve into the darkness.",
+            "Traveling alone in these parts is a death sentence.",
+            "Lost my entire party to a demon in the lower depths.",
+            "We could use another sword arm for what lies ahead.",
             "Running low on supplies... need to restock soon.",
-            "Red-cloaked murderers were spotted near the crossroads!"
+            "Any healers nearby? My wounds still ache.",
+            "I'd pay good coin for quality healing potions.",
+            "These old bandages won't hold much longer.",
+            "Need better armor before venturing deeper.",
+            "Red-cloaked murderers were spotted near the crossroads!",
+            "The northern pass is held by bandits now.",
+            "Beware the dark knights - they show no mercy.",
+            "A band of reavers camps just beyond those hills.",
+            "Stay out of the eastern woods after dark.",
+            "The old legends speak of power sealed in these ruins.",
+            "Strange lights dance in the graveyard at midnight.",
+            "I've seen things down there that defy explanation.",
+            "The ancients left more than just treasure behind.",
+            "Dark rituals are being performed in the lower levels."
         };
 
         private static readonly string[] EvilChat = new string[]
         {
             "Your coin or your life, fool.",
             "Fresh meat for the crows...",
+            "This is OUR territory. Pay the toll or bleed.",
             "The weak exist only to serve the strong.",
             "I smell fear... and gold.",
+            "Eight corpses before noon. Good hunting today.",
+            "Their screams still echo in my ears... delightful.",
+            "Left a trail of bodies from here to the coast.",
+            "The river runs red with their blood.",
+            "I've lost count of how many I've killed this week.",
+            "These ruins belong to us now. Leave or join the dead.",
             "Turn back while you still draw breath.",
-            "Gold talks. Mercy doesn't."
+            "Only the strong survive here. You don't look strong.",
+            "Trespassers end up feeding the crows.",
+            "This dungeon is ours. Find your own grave to rob.",
+            "Need someone killed? I know people...",
+            "For the right price, anyone can disappear.",
+            "We don't ask questions. We just collect heads.",
+            "Gold talks. Mercy doesn't.",
+            "Honor is for the dead and the foolish.",
+            "In the end, only power matters.",
+            "The darkness welcomes all who embrace it.",
+            "Law and order? Chains for the weak.",
+            "Morality is a luxury we can't afford."
         };
 
         private static readonly string[] CombatYell = new string[]
         {
-            "Surround them!", "Focus on the spell-caster!",
-            "Shield wall, hold formation!", "Flank them!",
-            "Healer down! Protect them!", "Hold the line!",
-            "For glory!", "Fight or die!"
+            "Surround them!", "Cut off their escape!", "Focus on the spell-caster!",
+            "Shield wall, hold formation!", "Flank them from the left!",
+            "Watch for ambushes!", "Cover the rear!", "Break their line!",
+            "Press the attack!", "Fall back and regroup!", "Healer down! Protect them!",
+            "They're flanking us!", "Ambush! Weapons ready!", "Trap! Watch your step!",
+            "Reinforcements incoming!", "We're surrounded!", "Hold the line!",
+            "For glory!", "Stand and fight!", "No retreat!", "We end this now!",
+            "Fight or die!", "To the last breath!", "Show no mercy!", "Give them steel!"
+        };
+
+        private static readonly string[] WizardCombatTactics = new string[]
+        {
+            "*weaves protective spell*", "*channels arcane power*",
+            "Focus on my target!", "Magic will turn the tide!",
+            "*mutters incantation*", "Keep them at range!",
+            "*gestures mystically*", "The arcane flows through me!"
+        };
+
+        private static readonly string[] FighterCombatTactics = new string[]
+        {
+            "*adopts defensive stance*", "*raises shield*", "Hold the line!",
+            "I won't fall!", "*grits teeth*", "Come on then!",
+            "Is that all you've got?!", "*plants feet firmly*",
+            "Stand behind me!", "I'll take the brunt!"
+        };
+
+        private static readonly string[] RogueCombatTactics = new string[]
+        {
+            "*repositions for better shot*", "Keep them busy!",
+            "*aims carefully*", "I'll flank them!", "Watch your back!",
+            "*nocks another arrow*", "*finds vantage point*",
+            "Cover while I reload!"
         };
 
         private static readonly string[] LowHealthWarnings = new string[]
         {
-            "I'm hurt badly!", "Need help here!", "Wounds are serious!", "Getting weak..."
+            "I'm hurt badly!", "Can't take much more!", "Need help here!",
+            "I'm in trouble!", "Wounds are serious!", "*bleeding heavily*",
+            "Getting weak...", "Lost a lot of blood!"
         };
 
         private static readonly string[] CriticalHealthWarnings = new string[]
         {
-            "I'm going down!", "Near death here!", "Someone help!", "Vision fading..."
+            "I'm going down!", "This is bad!", "Near death here!",
+            "Can barely stand!", "*gasps in pain*", "Someone help!",
+            "Won't last much longer!", "Vision fading..."
+        };
+
+        private static readonly string[] EnemyCountReactions = new string[]
+        {
+            "More of them incoming!", "We're outnumbered!", "Too many enemies!",
+            "Watch the flanks!", "Stay together!", "Multiple targets!",
+            "They're swarming us!", "Don't split up!"
+        };
+
+        private static readonly string[] AllyDownReactions = new string[]
+        {
+            "They got our wizard!", "Protect the wounded!", "Man down!",
+            "Cover them while they recover!", "Keep fighting!", "Don't let up!"
         };
 
         private static readonly string[] VictoryLines = new string[]
         {
             "That was close! Everyone alright?", "Good fight! Check the body for coin.",
-            "Another one bites the dust.", "Victory! But stay alert.",
-            "Well fought, friends!"
+            "We make a good team!", "Another one bites the dust.",
+            "I need to catch my breath...", "Did anyone get hurt badly?",
+            "That beast was tougher than expected.", "Victory! But stay alert.",
+            "Well fought, friends!", "*wipes blood from weapon*",
+            "Excellent teamwork!", "They didn't stand a chance!"
         };
 
         private static readonly string[] LootingLines = new string[]
         {
-            "*searches the corpse*", "This should fetch a good price!",
-            "Split the gold evenly, friends.", "I'll carry this."
+            "*searches the corpse*", "Let's see what it was carrying...",
+            "Hmm, not much here.", "This should fetch a good price!",
+            "*pockets the loot*", "Split the gold evenly, friends.",
+            "Nothing valuable on this one.", "Some coin and trinkets...",
+            "Better than nothing.", "I'll carry this."
         };
 
         private static readonly string[] RetreatLines = new string[]
         {
-            "Fall back! I'm badly wounded!", "Retreating! Cover me!",
-            "Not dying here today!", "Tactical withdrawal!"
+            "Fall back! I'm badly wounded!", "I can't take much more!",
+            "Retreating! Cover me!", "Too many of them!",
+            "*stumbles backward*", "I need to heal!",
+            "Not dying here today!", "Getting out of here!",
+            "Tactical withdrawal!"
         };
 
         private static readonly string[] MourningLines = new string[]
         {
             "No! They got him!", "Man down! Avenge our fallen!",
+            "*grieves* We'll make them pay!",
+            "Hold the line! Don't let their death be in vain!",
+            "They were a good fighter...", "Damn it! Stay focused!",
+            "Another one lost...", "This place claims too many lives!",
             "We'll honor their memory!", "Fight harder!"
+        };
+
+        private static readonly string[] CorpseComments = new string[]
+        {
+            "Someone died here recently...", "*examines the corpse* Poor soul.",
+            "This place is dangerous indeed.", "We should be more careful.",
+            "Whatever killed them might still be near.",
+            "The bodies pile up in these cursed ruins.",
+            "Death is everywhere here...", "Another victim of this place."
+        };
+
+        private static readonly string[] InjuredComments = new string[]
+        {
+            "I could use some healing...", "These wounds won't heal themselves.",
+            "*winces in pain*", "I've felt better, that's for sure.",
+            "Need to rest soon...", "Anyone have bandages?",
+            "Still bleeding...", "These cuts sting."
+        };
+
+        private static readonly string[] IdleComments = new string[]
+        {
+            "I wonder what lies deeper in...", "Stay sharp. I sense danger.",
+            "We should keep moving.", "Anyone else hear that?",
+            "*adjusts equipment*", "Something doesn't feel right...",
+            "Keep your eyes open.", "This silence is unnerving.",
+            "Too quiet...", "What's that sound?"
         };
 
         private static readonly string[] PotionLines = new string[]
         {
-            "*drinks potion*", "That's better!", "Glug, glug...", "Aha!"
+            "*drinks a healing potion*", "That should help!",
+            "*gulps potion hastily*", "Much better!",
+            "*uncorks flask*", "Good thing I brought these!",
+            "*downs potion*", "Ah, that's better!"
         };
 
         private static readonly string[] BandageLines = new string[]
         {
-            "*applies bandages*", "Stopping the blood...", "Hold still."
+            "*applies bandages*", "*binds wounds*",
+            "Just need to stop the bleeding...", "*wraps injuries*",
+            "These bandages will hold.", "*treats wounds*"
         };
 
         private static readonly string[] HealSpellLines = new string[]
         {
-            "In Vas Mani!", "Be healed!", "The light mends you."
+            "*casts healing magic on ally*", "In Vas Mani! Be healed!",
+            "*channels healing energy*", "Let the light mend your wounds!",
+            "*weaves restorative spell*", "Hold still, I'll heal you!"
         };
 
         private static readonly string[] OutOfSuppliesLines = new string[]
         {
-            "I'm out of supplies!", "No more potions!", "I need bandages!"
+            "Out of potions!", "No healing left!", "Need supplies badly!",
+            "Someone have a spare potion?", "My bandages are gone!",
+            "Out of healing supplies!"
         };
 
         private static readonly string[] DepartureLines = new string[]
         {
-            "Time to move on.", "Nothing left here.", "Let's go, team."
+            "We've lingered here long enough. Let's move on.",
+            "Time to seek fortune elsewhere, friends.",
+            "These halls grow quiet. Onward!",
+            "Our work here is done. To the next adventure!",
+            "Come, companions. Other treasures await.",
+            "This place yields no more. Let's go.",
+            "The road calls us. Time to move on.",
+            "We've cleared this area. Forward!",
+            "No more prey here. Let's find richer hunting grounds.",
+            "Time to depart. Other challenges await us."
         };
 
-        // Pre-cached lengths
-        private static readonly int FriendlyChatLen = FriendlyChat.Length;
-        private static readonly int EvilChatLen = EvilChat.Length;
-        private static readonly int CombatYellLen = CombatYell.Length;
-        private static readonly int VictoryLinesLen = VictoryLines.Length;
-        private static readonly int LootingLinesLen = LootingLines.Length;
-        private static readonly int RetreatLinesLen = RetreatLines.Length;
-        private static readonly int MourningLinesLen = MourningLines.Length;
-        private static readonly int LowHealthWarningsLen = LowHealthWarnings.Length;
-        private static readonly int CriticalHealthWarningsLen = CriticalHealthWarnings.Length;
-        private static readonly int PotionLinesLen = PotionLines.Length;
-        private static readonly int BandageLinesLen = BandageLines.Length;
-        private static readonly int HealSpellLinesLen = HealSpellLines.Length;
-        private static readonly int OutOfSuppliesLinesLen = OutOfSuppliesLines.Length;
-        private static readonly int DepartureLinesLen = DepartureLines.Length;
+        private static readonly string[] LeaderOrders = new string[]
+        {
+            "Formation! Back to back!",
+            "Protect each other!",
+            "Watch your flanks!",
+            "Focus fire!"
+        };
         #endregion
 
         #region Shared Team State
@@ -191,8 +333,7 @@ namespace Server.Scripts.Custom
 
         private readonly List<AdventurerTeam> m_CachedNearbyMembers = new List<AdventurerTeam>(10);
         private Mobile m_CachedCombatant;
-        private int m_CachedCombatantDistSq;
-
+        
         private bool m_IsRetreating;
         private bool m_DeathAnnounced;
         private bool m_IsLeaving;
@@ -224,10 +365,6 @@ namespace Server.Scripts.Custom
         private DateTime m_NextRandomRefresh;
 
         private DateTime m_LastMessageTime;
-        private const int MessagePoolSize = 8;
-        private readonly string[] m_MessagePool = new string[MessagePoolSize];
-        private int m_MessagePoolIndex;
-
         private bool m_CachedIsLeader;
         private DateTime m_NextLeaderCheck;
         #endregion
@@ -308,7 +445,6 @@ namespace Server.Scripts.Custom
             m_NextChatTime = now.AddSeconds(Utility.RandomMinMax(3, 15));
             m_BoredTime = now.AddMinutes(Utility.RandomMinMax(15, 30));
             m_NextRandomRefresh = now + TwoSeconds;
-            m_CachedCombatantDistSq = 9999;
             RefreshRandomCache();
         }
 
@@ -316,18 +452,10 @@ namespace Server.Scripts.Custom
         #endregion
 
         #region Team Management (Thread-Safe)
-        private object GetTeamLock()
-        {
-            if (m_TeamId == 0) return TeamLocks[0];
-            int index = (m_TeamId < 0 ? -m_TeamId : m_TeamId) % TeamLocks.Length;
-            return TeamLocks[index];
-        }
-
         private bool CheckIfLeaderInternal()
         {
             if (m_TeamId == 0) return false;
-            object teamLock = GetTeamLock();
-            lock (teamLock)
+            lock (AllTeamsLock)
             {
                 TeamInfo ti;
                 if (!AllTeams.TryGetValue(m_TeamId, out ti)) return false;
@@ -338,20 +466,14 @@ namespace Server.Scripts.Custom
         private void AddToTeam(int teamId)
         {
             if (teamId == 0) return;
-            TeamInfo ti;
-            object teamLock = GetTeamLock();
-
-            lock (teamLock)
+            lock (AllTeamsLock)
             {
+                TeamInfo ti;
                 if (!AllTeams.TryGetValue(teamId, out ti))
                 {
                     ti = new TeamInfo();
                     AllTeams[teamId] = ti;
                 }
-            }
-
-            lock (ti.Members)
-            {
                 if (!ti.Members.Contains(this)) ti.Members.Add(this);
                 if (ti.Leader == null || Serial < ti.Leader.Serial) ti.Leader = this;
             }
@@ -360,31 +482,28 @@ namespace Server.Scripts.Custom
         private void RemoveFromTeam(int teamId)
         {
             if (teamId == 0) return;
-            TeamInfo ti;
-            object teamLock = GetTeamLock();
-
-            lock (teamLock)
+            lock (AllTeamsLock)
             {
+                TeamInfo ti;
                 if (!AllTeams.TryGetValue(teamId, out ti)) return;
-                lock (ti.Members)
+                
+                ti.Members.Remove(this);
+                if (ti.Leader == this)
                 {
-                    ti.Members.Remove(this);
-                    if (ti.Leader == this)
+                    // Elect new leader
+                    AdventurerTeam newLeader = null;
+                    for (int i = 0; i < ti.Members.Count; i++)
                     {
-                        AdventurerTeam newLeader = null;
-                        for (int i = 0; i < ti.Members.Count; i++)
-                        {
-                            AdventurerTeam at = ti.Members[i];
-                            if (at == null || at.Deleted) { ti.Members.RemoveAt(i--); continue; }
-                            if (newLeader == null || at.Serial < newLeader.Serial) newLeader = at;
-                        }
-                        ti.Leader = newLeader;
+                        AdventurerTeam at = ti.Members[i];
+                        if (at == null || at.Deleted) { ti.Members.RemoveAt(i--); continue; }
+                        if (newLeader == null || at.Serial < newLeader.Serial) newLeader = at;
                     }
-                    if (ti.Members.Count == 0)
-                    {
-                        AllTeams.Remove(teamId);
-                        AutoTeamMaintainer.RecycleTeamId(teamId);
-                    }
+                    ti.Leader = newLeader;
+                }
+                if (ti.Members.Count == 0)
+                {
+                    AllTeams.Remove(teamId);
+                    AutoTeamMaintainer.RecycleTeamId(teamId);
                 }
             }
         }
@@ -392,6 +511,7 @@ namespace Server.Scripts.Custom
         private List<AdventurerTeam> GetSharedNearbyMembers(DateTime now)
         {
             if (m_TeamId == 0) return m_CachedNearbyMembers;
+            
             TeamInfo ti;
             if (AllTeams.TryGetValue(m_TeamId, out ti) && ti != null)
             {
@@ -410,13 +530,11 @@ namespace Server.Scripts.Custom
             return true;
         }
 
-        private string GetPooledMessage(string[] source, int sourceLen)
+        // Direct array access replaces the old buggy message pool logic
+        private string GetPooledMessage(string[] source)
         {
-            int slot = (m_MessagePoolIndex++ & (MessagePoolSize - 1));
-            string msg = m_MessagePool[slot];
-            if (msg == null) msg = source[Utility.Random(sourceLen)];
-            m_MessagePool[slot] = msg;
-            return msg;
+            if (source == null || source.Length == 0) return "";
+            return source[Utility.Random(source.Length)];
         }
 
         private void RefreshRandomCache()
@@ -433,11 +551,9 @@ namespace Server.Scripts.Custom
         #endregion
 
         #region Event-Driven Logic
-
         public override void OnDamage(int amount, Mobile from, bool willKill)
         {
             base.OnDamage(amount, from, willKill);
-
             if (willKill || Deleted) return;
 
             DateTime now = DateTime.UtcNow;
@@ -449,8 +565,11 @@ namespace Server.Scripts.Custom
                 if (Utility.RandomDouble() < 0.35)
                 {
                     m_IsRetreating = true;
-                    if (CanSendMessage(now)) Say(RetreatLines[Utility.Random(RetreatLinesLen)]);
+                    if (CanSendMessage(now)) Say(GetPooledMessage(RetreatLines));
+                    
                     Combatant = null;
+                    Warmode = false;
+
                     m_PendingRetreatReset = true;
                     m_PendingRetreatResetTime = now + RetreatResetDelay;
                 }
@@ -459,12 +578,12 @@ namespace Server.Scripts.Custom
             if (hpRatio < CriticalHealthThreshold && !m_HasWarnedCriticalHealth)
             {
                 m_HasWarnedCriticalHealth = true;
-                if (CanSendMessage(now)) Say(GetPooledMessage(CriticalHealthWarnings, CriticalHealthWarningsLen));
+                if (CanSendMessage(now)) Say(GetPooledMessage(CriticalHealthWarnings));
             }
             else if (hpRatio < LowHealthThreshold && !m_HasWarnedLowHealth)
             {
                 m_HasWarnedLowHealth = true;
-                if (CanSendMessage(now)) Say(GetPooledMessage(LowHealthWarnings, LowHealthWarningsLen));
+                if (CanSendMessage(now)) Say(GetPooledMessage(LowHealthWarnings));
             }
 
             TryHealSelf(now, hpRatio);
@@ -490,9 +609,8 @@ namespace Server.Scripts.Custom
             {
                 m_LastCombatTime = now;
                 m_CelebrationDone = false;
-                
                 if (CanSendMessage(now) && Utility.RandomDouble() < 0.4)
-                    Say(GetPooledMessage(CombatYell, CombatYellLen));
+                    Say(GetPooledMessage(CombatYell));
             }
         }
 
@@ -526,22 +644,21 @@ namespace Server.Scripts.Custom
                 else if (m_CachedRandom2 < 0.45)
                 {
                     m_LastGreetTime = now;
-                    Say(m_IsEvil ? "Stay out of our way." : "Safe travels, friend.");
+                    // [UPDATED] Use expanded chat lists for greeting variety
+                    string[] source = m_IsEvil ? EvilChat : FriendlyChat;
+                    Say(GetPooledMessage(source));
                 }
             }
         }
         #endregion
 
         #region Core AI Loop (OnThink)
-
         public override void OnThink()
         {
             base.OnThink();
-
             if (Deleted || Map == null || Map == Map.Internal) return;
 
             DateTime now = DateTime.UtcNow;
-            
             ProcessPendingActions(now);
             ProcessPendingHeal(now);
 
@@ -567,24 +684,17 @@ namespace Server.Scripts.Custom
                     }
                     ApplyCombatantToNearbyMembers(now);
                 }
-
-                if (!m_IsRetreating)
-                {
-                    TryHealAllies(now);
-                }
+                if (!m_IsRetreating) TryHealAllies(now);
             }
             else
             {
                 if (!m_IsLeaving && now > m_BoredTime && isLeader && m_CachedRandom1 < 0.02)
-                {
                     InitiateTeamDeparture(now);
-                }
 
                 if (!m_IsRetreating)
                 {
                     if (Hits < HitsMax && now >= m_NextSelfHeal)
                         TryHealSelf(now, (double)Hits/HitsMax);
-                    
                     TryHealAllies(now);
                 }
             }
@@ -603,7 +713,7 @@ namespace Server.Scripts.Custom
             if (m_PendingHealTarget == null || now < m_PendingHealTime) return;
 
             Mobile target = m_PendingHealTarget;
-            if (!target.Deleted && target.Alive)
+            if (!target.Deleted && target.Alive && target.Map == Map && target.InRange(Location, 12))
             {
                 target.Heal(m_PendingHealAmount, this);
                 target.FixedParticles(0x376A, 9, 32, 5030, EffectLayer.Waist);
@@ -620,7 +730,7 @@ namespace Server.Scripts.Custom
                 m_PendingCelebrate = false;
                 if (!Deleted && Map != null && CanSendMessage(now))
                 {
-                    Say(GetPooledMessage(VictoryLines, VictoryLinesLen));
+                    Say(GetPooledMessage(VictoryLines));
                     if (IsTeamLeaderAt(now) && m_CachedRandom2 < 0.40)
                     {
                         m_PendingLoot = true;
@@ -632,13 +742,13 @@ namespace Server.Scripts.Custom
             if (m_PendingLoot && now >= m_PendingLootTime)
             {
                 m_PendingLoot = false;
-                if (!Deleted && Map != null) Say(GetPooledMessage(LootingLines, LootingLinesLen));
+                if (!Deleted && Map != null) Say(GetPooledMessage(LootingLines));
             }
 
             if (m_PendingMourn && now >= m_PendingMournTime)
             {
                 m_PendingMourn = false;
-                if (!Deleted && Map != null) Say(GetPooledMessage(MourningLines, MourningLinesLen));
+                if (!Deleted && Map != null) Say(GetPooledMessage(MourningLines));
             }
 
             if (m_PendingRetreatReset && now >= m_PendingRetreatResetTime)
@@ -659,7 +769,8 @@ namespace Server.Scripts.Custom
             if (Deleted || Map == null || m_CachedRandom2 >= 0.38) return;
             if (!CanSendMessage(now)) return;
 
-            string line = m_IsEvil ? GetPooledMessage(EvilChat, EvilChatLen) : GetPooledMessage(FriendlyChat, FriendlyChatLen);
+            string[] source = m_IsEvil ? EvilChat : FriendlyChat;
+            string line = GetPooledMessage(source);
             PublicOverheadMessage(MessageType.Regular, m_IsEvil ? 0x22 : SpeechHue, true, line);
         }
         #endregion
@@ -669,43 +780,43 @@ namespace Server.Scripts.Custom
         {
             if (Map == null) return;
 
-            ti.SharedScanTime = now;
-            ti.SharedEnemyCount = 0;
-            ti.SharedInjuredAllies = 0;
-            ti.SharedNearbyMembers.Clear();
-
-            IPooledEnumerable eable = Map.GetMobilesInRange(Location, TeamMemberRange);
-            try
+            lock (ti)
             {
-                foreach (Mobile m in eable)
+                ti.SharedScanTime = now;
+                ti.SharedEnemyCount = 0;
+                ti.SharedInjuredAllies = 0;
+                ti.SharedNearbyMembers.Clear();
+
+                IPooledEnumerable eable = Map.GetMobilesInRange(Location, TeamMemberRange);
+                try
                 {
-                    if (m == null || m == this || m.Deleted || !m.Alive) continue;
-
-                    AdventurerTeam at = m as AdventurerTeam;
-                    if (at != null && at.m_TeamId == m_TeamId)
+                    foreach (Mobile m in eable)
                     {
-                        if (ti.SharedNearbyMembers.Count < MaxCachedNearbyMembers)
-                            ti.SharedNearbyMembers.Add(at);
-                        
-                        if (at.Hits < (at.HitsMax >> 1))
-                            ti.SharedInjuredAllies++;
-                        continue;
-                    }
+                        if (m == null || m == this || m.Deleted || !m.Alive) continue;
 
-                    if (m.Combatant != null)
-                    {
-                        AdventurerTeam atCombatant = m.Combatant as AdventurerTeam;
-                        if (atCombatant != null && atCombatant.m_TeamId == m_TeamId)
-                            ti.SharedEnemyCount++;
-                    }
+                        AdventurerTeam at = m as AdventurerTeam;
+                        if (at != null && at.m_TeamId == m_TeamId)
+                        {
+                            if (ti.SharedNearbyMembers.Count < MaxCachedNearbyMembers)
+                                ti.SharedNearbyMembers.Add(at);
+                            
+                            if (at.Hits < (at.HitsMax >> 1))
+                                ti.SharedInjuredAllies++;
+                            continue;
+                        }
 
-                    if (ti.SharedEnemyCount >= 8 && ti.SharedInjuredAllies >= 4 && ti.SharedNearbyMembers.Count >= MaxCachedNearbyMembers)
-                        break;
+                        if (m.Combatant != null)
+                        {
+                            AdventurerTeam atCombatant = m.Combatant as AdventurerTeam;
+                            if (atCombatant != null && atCombatant.m_TeamId == m_TeamId)
+                                ti.SharedEnemyCount++;
+                        }
+
+                        if (ti.SharedEnemyCount >= 8 && ti.SharedInjuredAllies >= 4 && ti.SharedNearbyMembers.Count >= MaxCachedNearbyMembers)
+                            break;
+                    }
                 }
-            }
-            finally
-            {
-                if (eable != null) eable.Free();
+                finally { if (eable != null) eable.Free(); }
             }
         }
 
@@ -763,12 +874,10 @@ namespace Server.Scripts.Custom
             {
                 AdventurerTeam ally = nearby[i];
                 if (ally == null || ally.Deleted || !ally.Alive) continue;
-
                 if (ally.Map != Map) continue;
                 int dx = X - ally.X;
                 int dy = Y - ally.Y;
                 if ((dx * dx + dy * dy) > 64) continue;
-
                 if (!InLOS(ally)) continue;
 
                 double allyHpPercent = (double)ally.Hits / ally.HitsMax;
@@ -783,6 +892,8 @@ namespace Server.Scripts.Custom
             {
                 if (TryUseMagicHealing(mostInjured, now))
                     m_NextAllyHeal = now + EightSeconds;
+                else
+                    m_NextAllyHeal = now + TwoSeconds; 
             }
         }
 
@@ -792,12 +903,12 @@ namespace Server.Scripts.Custom
             if (potion != null)
             {
                 potion.Drink(this);
-                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(PotionLines, PotionLinesLen));
+                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(PotionLines));
                 m_NextSelfHeal = now + TenSeconds;
                 return true;
             }
             if (m_CachedRandom1 < 0.15 && CanSendMessage(now))
-                Say(GetPooledMessage(OutOfSuppliesLines, OutOfSuppliesLinesLen));
+                Say(GetPooledMessage(OutOfSuppliesLines));
             return false;
         }
 
@@ -809,7 +920,7 @@ namespace Server.Scripts.Custom
             if (bandage == null || bandage.Amount <= 0)
             {
                 if (m_CachedRandom1 < 0.10 && CanSendMessage(now))
-                    Say(GetPooledMessage(OutOfSuppliesLines, OutOfSuppliesLinesLen));
+                    Say(GetPooledMessage(OutOfSuppliesLines));
                 return false;
             }
 
@@ -817,7 +928,7 @@ namespace Server.Scripts.Custom
             try
             {
                 bandage.Consume(1);
-                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(BandageLines, BandageLinesLen));
+                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(BandageLines));
                 PlaySound(0x57);
 
                 double healingSkill = Skills[SkillName.Healing].Value;
@@ -865,7 +976,7 @@ namespace Server.Scripts.Custom
             }
             else
             {
-                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(HealSpellLines, HealSpellLinesLen));
+                PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(HealSpellLines));
             }
             return true;
         }
@@ -888,7 +999,7 @@ namespace Server.Scripts.Custom
         {
             if (m_IsLeaving) return;
             m_IsLeaving = true;
-            if (CanSendMessage(now)) Say(DepartureLines[Utility.Random(DepartureLinesLen)]);
+            if (CanSendMessage(now)) Say(GetPooledMessage(DepartureLines));
             m_PendingDeparture = true;
             m_PendingDepartureTime = now + DepartureDelay;
         }
@@ -926,7 +1037,7 @@ namespace Server.Scripts.Custom
         }
         #endregion
 
-        #region Setup (Stats)
+        #region Setup (Stats & Weapons)
         private void InitStatsAndAppearance()
         {
             Female = Utility.RandomBool();
@@ -1048,11 +1159,14 @@ namespace Server.Scripts.Custom
                 if (twohand != null) twohand.Delete();
             }
 
-            // Custom Throwing Gloves Check
             if (Utility.RandomBool() && (m_CitizenType != (int)CitizenClass.Fighter))
             {
-                AddItem(new Item(0x13C6) { Name = "Throwing Gloves" });
-                PackItem(new Item(0xF0E) { Name = "Throwing Ammunition" });
+                Item gloves = new Item(0x13C6);
+                gloves.Name = "Throwing Gloves";
+                AddItem(gloves);
+                Item ammo = new Item(0xF0E);
+                ammo.Name = "Throwing Ammunition";
+                PackItem(ammo);
                 return;
             }
 
