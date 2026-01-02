@@ -20,7 +20,7 @@ namespace Server.Scripts.Custom
     public class AdventurerTeam : BaseCreature
     {
         #region Dialogue Data (Static / Flavor Text)
-        // Static arrays to save memory. 
+        // Static arrays to save memory and provide flavor text.
         
         private static readonly string[] FriendlyGreetings = new string[]
         {
@@ -36,37 +36,89 @@ namespace Server.Scripts.Custom
 
         private static readonly string[] FriendlyChat = new string[]
         {
-            "The wyrms in the deep caves grow bolder...",
-            "Careful where you tread - traps abound.",
-            "We need to restock supplies soon.",
+            "The wyrms in the deep caves grow bolder each day...",
+            "I barely escaped from a pack of dire wolves yesterday.",
+            "These lands are cursed, I tell you. Evil stirs in the shadows.",
+            "The undead rise more frequently near the old crypts.",
+            "I saw a dragon's shadow pass overhead last night.",
+            "Careful where you tread - traps abound in ancient ruins.",
+            "The forest trolls have been raiding caravans again.",
+            "They say a forgotten tomb lies beneath the old keep.",
             "I seek a legendary blade, lost to time.",
-            "Did you hear that sound?",
-            "Stay sharp, everyone.",
-            "I've heard rumors of a hidden vault nearby."
+            "Ancient treasures await those brave enough to claim them.",
+            "A merchant spoke of ruins filled with gold and jewels.",
+            "The old wizard's tower supposedly holds great power.",
+            "I heard whispers of a hidden vault in the mountains.",
+            "My companions fell to an ambush three days past.",
+            "I seek fellow brave souls to delve into the darkness.",
+            "Traveling alone in these parts is a death sentence.",
+            "Lost my entire party to a demon in the lower depths.",
+            "We could use another sword arm for what lies ahead.",
+            "Running low on supplies... need to restock soon.",
+            "Any healers nearby? My wounds still ache.",
+            "I'd pay good coin for quality healing potions.",
+            "These old bandages won't hold much longer.",
+            "Need better armor before venturing deeper.",
+            "Red-cloaked murderers were spotted near the crossroads!",
+            "The northern pass is held by bandits now.",
+            "Beware the dark knights - they show no mercy.",
+            "A band of reavers camps just beyond those hills.",
+            "Stay out of the eastern woods after dark.",
+            "The old legends speak of power sealed in these ruins.",
+            "Strange lights dance in the graveyard at midnight.",
+            "I've seen things down there that defy explanation.",
+            "The ancients left more than just treasure behind.",
+            "Dark rituals are being performed in the lower levels."
         };
 
         private static readonly string[] EvilChat = new string[]
         {
             "Your coin or your life, fool.",
             "Fresh meat for the crows...",
-            "This is OUR territory.",
+            "This is OUR territory. Pay the toll or bleed.",
+            "The weak exist only to serve the strong.",
             "I smell fear... and gold.",
-            "Only the strong survive here.",
-            "Stop whining and keep moving."
+            "Eight corpses before noon. Good hunting today.",
+            "Their screams still echo in my ears... delightful.",
+            "Left a trail of bodies from here to the coast.",
+            "The river runs red with their blood.",
+            "I've lost count of how many I've killed this week.",
+            "These ruins belong to us now. Leave or join the dead.",
+            "Turn back while you still draw breath.",
+            "Only the strong survive here. You don't look strong.",
+            "Trespassers end up feeding the crows.",
+            "This dungeon is ours. Find your own grave to rob.",
+            "Need someone killed? I know people...",
+            "For the right price, anyone can disappear.",
+            "We don't ask questions. We just collect heads.",
+            "Gold talks. Mercy doesn't.",
+            "Honor is for the dead and the foolish.",
+            "In the end, only power matters.",
+            "The darkness welcomes all who embrace it.",
+            "Law and order? Chains for the weak.",
+            "Morality is a luxury we can't afford."
         };
 
         private static readonly string[] CombatYell = new string[]
         {
-            "Surround them!", "Focus fire!", "Shield wall!", 
-            "Healer down! Protect them!", "For glory!", "Fight or die!",
-            "Don't let them escape!"
+            "Surround them!", "Cut off their escape!", "Focus on the spell-caster!",
+            "Shield wall, hold formation!", "Flank them from the left!",
+            "Watch for ambushes!", "Cover the rear!", "Break their line!",
+            "Press the attack!", "Fall back and regroup!", "Healer down! Protect them!",
+            "They're flanking us!", "Ambush! Weapons ready!", "Trap! Watch your step!",
+            "Reinforcements incoming!", "We're surrounded!", "Hold the line!",
+            "For glory!", "Stand and fight!", "No retreat!", "We end this now!",
+            "Fight or die!", "To the last breath!", "Show no mercy!", "Give them steel!"
         };
 
         private static readonly string[] VictoryLines = new string[]
         {
-            "Target down!", "Good fight!", "Another one bites the dust.", 
-            "Clear! Check the bodies.", "Well fought, friends.",
-            "Is everyone alright?"
+            "That was close! Everyone alright?", "Good fight! Check the body for coin.",
+            "We make a good team!", "Another one bites the dust.",
+            "I need to catch my breath...", "Did anyone get hurt badly?",
+            "That beast was tougher than expected.", "Victory! But stay alert.",
+            "Well fought, friends!", "*wipes blood from weapon*",
+            "Excellent teamwork!", "They didn't stand a chance!"
         };
 
         private static readonly string[] RetreatLines = new string[]
@@ -92,7 +144,7 @@ namespace Server.Scripts.Custom
         #endregion
 
         #region Configuration
-        // Prevent chat spam
+        // Limits chat frequency to prevent spam
         private static readonly TimeSpan SpeechThrottle = TimeSpan.FromSeconds(2.0);
         
         // AI Logic Thresholds
@@ -121,6 +173,11 @@ namespace Server.Scripts.Custom
         private bool m_IsUsingBandage;
         private bool m_IsRetreating;
         private DateTime m_RetreatResetTime;
+
+        // [PERFORMANCE OPTIMIZATION] Squad Cache
+        // This list stores direct references to teammates.
+        // It eliminates the need for expensive 'GetMobilesInRange' calls during healing checks.
+        private List<AdventurerTeam> m_MySquad = new List<AdventurerTeam>();
         #endregion
 
         #region Properties
@@ -173,7 +230,7 @@ namespace Server.Scripts.Custom
         public AdventurerTeam(int teamId, bool isEvil, bool mounted) 
             : base(AIType.AI_Melee, FightMode.Closest, 10, 1, 0.2, 0.4)
         {
-            // Assign Native Team ID for simple friend/foe logic
+            // Assign Native Team ID for simple friend/foe logic in Core AI
             if (teamId != 0)
                 this.Team = teamId;
 
@@ -198,6 +255,17 @@ namespace Server.Scripts.Custom
         public AdventurerTeam(Serial serial) : base(serial) { }
         #endregion
 
+        #region Squad Management (The Optimization)
+        // Adds a teammate to the local cache. Called by AutoTeamMaintainer upon spawn.
+        public void AddToSquad(AdventurerTeam member)
+        {
+            if (member != null && member != this && !m_MySquad.Contains(member))
+            {
+                m_MySquad.Add(member);
+            }
+        }
+        #endregion
+
         #region Core Logic (OnThink)
         public override void OnThink()
         {
@@ -206,19 +274,19 @@ namespace Server.Scripts.Custom
 
             DateTime now = DateTime.UtcNow;
 
-            // 1. Retreat Logic Handling
+            // 1. Retreat Logic
             if (m_IsRetreating)
             {
                 if (now > m_RetreatResetTime)
                 {
-                    m_IsRetreating = false; // Stop retreating after a few seconds
+                    m_IsRetreating = false; // Stop retreating
                 }
                 else
                 {
-                    // Force disengage
+                    // Force disengage while retreating
                     Combatant = null;
                     Warmode = false;
-                    return; // Skip other logic while retreating
+                    return; // Skip other logic
                 }
             }
 
@@ -260,24 +328,37 @@ namespace Server.Scripts.Custom
             if (hpRatio < HealSelfThreshold)
                 TryHealSelf(now);
 
-            // Wizard Cross-Healing
+            // [OPTIMIZED] Wizard Cross-Healing
+            // Instead of scanning the map (expensive), we iterate the cached squad list (cheap).
             if (m_CitizenType == (int)CitizenClass.Wizard && Mana > 10)
             {
                 AdventurerTeam injuredAlly = null;
-                foreach (Mobile m in this.GetMobilesInRange(12))
+
+                // Loop backwards so we can safely remove deleted members if necessary
+                for (int i = m_MySquad.Count - 1; i >= 0; i--)
                 {
-                    BaseCreature bc = m as BaseCreature;
-                    // Check for Team ID match
-                    if (bc != null && bc is AdventurerTeam && bc.Team == this.Team && bc != this && bc.Alive)
+                    AdventurerTeam ally = m_MySquad[i];
+
+                    // Cleanup: Remove invalid members from cache
+                    if (ally == null || ally.Deleted)
                     {
-                        if (bc.Hits < (bc.HitsMax * HealAllyThreshold))
+                        m_MySquad.RemoveAt(i);
+                        continue;
+                    }
+
+                    // Check: Alive, Same Map, Within Range, Low Health
+                    if (ally.Alive && ally.Map == this.Map && ally.InRange(this, 12))
+                    {
+                        if (ally.Hits < (ally.HitsMax * HealAllyThreshold))
                         {
-                            injuredAlly = (AdventurerTeam)bc;
-                            break;
+                            injuredAlly = ally;
+                            break; // Found a target, stop searching
                         }
                     }
                 }
-                if (injuredAlly != null) DoMagicHeal(injuredAlly);
+                
+                if (injuredAlly != null) 
+                    DoMagicHeal(injuredAlly);
             }
         }
         #endregion
@@ -289,8 +370,7 @@ namespace Server.Scripts.Custom
             
             if (willKill || Deleted) return;
 
-            // Retreat Logic
-            // Fighters never retreat. Others retreat if HP < 25% (35% chance).
+            // Retreat Logic: Fighters never retreat. Others chance to retreat if HP < 25%.
             if (!m_IsRetreating && m_CitizenType != (int)CitizenClass.Fighter)
             {
                 double hpRatio = (double)Hits / HitsMax;
@@ -362,6 +442,7 @@ namespace Server.Scripts.Custom
                     bandage.Consume(1);
                     PublicOverheadMessage(MessageType.Emote, 0x3B2, true, GetPooledMessage(BandageLines));
                     
+                    // Simple delay to simulate bandage timer
                     Timer.DelayCall(TimeSpan.FromSeconds(4.0), delegate 
                     { 
                         if (!Deleted && Alive) 
@@ -402,7 +483,7 @@ namespace Server.Scripts.Custom
         #endregion
 
         #region Setup (Mounts & Appearance)
-        // Helper to enforce consistency. If the team is mounted, EVERYONE gets a horse.
+        // Enforce consistency: If the team is mounted, everyone gets a horse.
         private void EnforceMountState(bool shouldBeMounted)
         {
             if (shouldBeMounted)
@@ -537,26 +618,24 @@ namespace Server.Scripts.Custom
                 if (initial) { if(hand!=null) hand.Delete(); if(twohand!=null) twohand.Delete(); }
                 AddItem(Utility.RandomBool() ? (Item)new GnarledStaff() : new QuarterStaff());
             }
-            // Rogue Weapons
+            // Rogue Weapons (Enhanced Variety)
             else if (m_CitizenType == (int)CitizenClass.Rogue)
             {
                 if (initial) { if(hand!=null) hand.Delete(); if(twohand!=null) twohand.Delete(); }
 
-                // 1. Rare Throwing Gloves
-                // 50% Chance to have "Throwing" gear if selected (high variance)
+                // Rare Throwing Gloves (High variance)
                 if (Utility.RandomBool())
                 {
-                    Item gloves = new Item(0x13C6); // Gloves of Throwing graphic
+                    Item gloves = new Item(0x13C6); 
                     gloves.Name = "Throwing Gloves";
                     AddItem(gloves);
-                    Item ammo = new Item(0xF0E); // Rock/Stone graphic
+                    Item ammo = new Item(0xF0E);
                     ammo.Name = "Throwing Ammunition";
                     PackItem(ammo);
                     return; 
                 }
 
-                // 2. Varied Ranged Weapons
-                // Ensures different rogues have different attack speeds/damage profiles
+                // Varied Ranged Weapons
                 int ammoCount = Utility.RandomMinMax(60, 100);
                 switch (Utility.Random(8))
                 {
@@ -702,10 +781,27 @@ namespace Server.Scripts.Custom
             bool mounted = Utility.RandomDouble() < 0.4; // 40% chance for mounted team
             int size = Utility.RandomMinMax(2, 5);
 
+            // [OPTIMIZATION] Temporary list to hold new squad members for linking
+            List<AdventurerTeam> newSquadMembers = new List<AdventurerTeam>();
+
             for (int i = 0; i < size; i++)
             {
                 AdventurerTeam npc = new AdventurerTeam(teamId, isEvil, mounted);
                 npc.MoveToWorld(spawnLoc, pm.Map);
+                newSquadMembers.Add(npc);
+            }
+
+            // [OPTIMIZATION] Squad Linkage (O(N^2) but N is tiny, e.g., 5)
+            // Introduce all members to each other immediately so they don't have to scan the map later.
+            foreach (AdventurerTeam member in newSquadMembers)
+            {
+                foreach (AdventurerTeam ally in newSquadMembers)
+                {
+                    if (member != ally)
+                    {
+                        member.AddToSquad(ally);
+                    }
+                }
             }
         }
 
