@@ -5,7 +5,7 @@ using Server.Items;
 using Server.Mobiles;
 using Server.Network;
 using Server.Regions;
-using Server.Misc; 
+using Server.Misc;
 using Server.ContextMenus; 
 
 namespace Server.Scripts.Custom
@@ -114,6 +114,7 @@ namespace Server.Scripts.Custom
                 return;
             }
 
+            // Lost Master Grace Period logic (~15 sec)
             if (ControlMaster == null || ControlMaster.Deleted || ControlMaster.Map != this.Map || !ControlMaster.InRange(this, 40))
             {
                 m_LostCounter++;
@@ -256,7 +257,7 @@ namespace Server.Scripts.Custom
     [CorpseName("an adventurer corpse")]
     public class AdventurerTeam : BaseCreature
     {
-        #region 1. Dialogue & Text Data
+        #region 1. Dialogue & Text Data (Expanded & Rich)
         private static readonly string[] FriendlyChat = new string[] 
         { 
             "The wyrms in the deep caves grow bolder each day...",
@@ -273,7 +274,14 @@ namespace Server.Scripts.Custom
             "We could use another sword arm for what lies ahead.",
             "Running low on supplies... need to restock soon.",
             "Any healers nearby? My wounds still ache.",
-            "Safe travels, friend.", "Hail, traveler.", "Good day."
+            "Safe travels, friend.", "Hail, traveler.", "Good day.",
+            "I've seen things down there that defy explanation.",
+            "The ancients left more than just their bones behind.",
+            "The air grows colder the deeper you go.",
+            "I marked a safe path through the rubble, but it won't last forever.",
+            "Something down there hunts by sound… tread lightly.",
+            "We found a wall covered in runes, still glowing faintly.",
+            "Light is your best ally in those depths."
         };
 
         private static readonly string[] EvilChat = new string[] 
@@ -290,7 +298,13 @@ namespace Server.Scripts.Custom
             "Trespassers end up feeding the crows.",
             "Gold talks. Mercy doesn't.",
             "Can't afford to be weak around these parts. Kill them.",
-            "Back off.", "Walk away.", "What are you looking at?", "Get lost."
+            "Back off.", "Walk away.", "What are you looking at?", "Get lost.",
+            "Turn back while you still draw breath.",
+            "Need someone killed? I know people...",
+            "For the right price, anyone can disappear.",
+            "Honor is for the dead and the foolish.",
+            "Blood sharpens my blade.",
+            "Care for a little sport? You run, we hunt."
         };
 
         private static readonly string[] FriendlyGreetings = new string[] 
@@ -312,7 +326,7 @@ namespace Server.Scripts.Custom
         private static readonly string[] PanicLines = new string[] 
         { 
             "I'm out of here!", "Run!", "Not worth it!", "Retreat!", "Save yourselves!", "Too strong!",
-            "I can't take much more!", "Cover me!", "Fall back!"
+            "I can't take much more!", "Cover me!", "Fall back!", "Disengage!", "Regroup outside!"
         };
 
         private static readonly string[] SquadDeathLines = new string[] 
@@ -326,7 +340,8 @@ namespace Server.Scripts.Custom
             "Attack!", "Die!", "For glory!", "Surround them!", "Cut off their escape!",
             "Shield wall, hold formation!", "Flank them from the left!", "Cover the rear!",
             "Break their line!", "Press the attack!", "Healer down! Protect them!",
-            "No retreat!", "We end this now!", "Fight or die!", "Show no mercy!"
+            "No retreat!", "We end this now!", "Fight or die!", "Show no mercy!",
+            "Focus on the spell-caster!", "Lock shields!", "Drive them back!", "Take them down!"
         };
 
         private static readonly string[] VictoryLines = new string[] 
@@ -335,7 +350,9 @@ namespace Server.Scripts.Custom
             "That was close! Everyone alright?", "Good fight! Check the body for coin.",
             "Another one bites the dust.", "I need to catch my breath...",
             "Victory! But stay alert.", "Well fought, friends!", "*wipes blood from weapon*",
-            "Excellent teamwork!", "They didn't stand a chance!", "Area clear… for now."
+            "Excellent teamwork!", "They didn't stand a chance!", "Area clear… for now.",
+            "Count heads, make sure no one's missing.", "Not bad — we're still alive.",
+            "Clean your blades, this place isn't safe."
         };
 
         private static readonly string[] RetreatLines = new string[] 
@@ -343,7 +360,8 @@ namespace Server.Scripts.Custom
             "Retreat!", "Fall back!", "Regroup!", "Fall back! I'm badly wounded!",
             "I can't take much more!", "Cover me!", "Too many of them!",
             "I need to heal!", "Not dying here today!", "Tactical withdrawal!",
-            "Pull back, now!", "Break contact!"
+            "Pull back, now!", "Break contact!", "Hold them off while we withdraw!",
+            "This fight's lost!"
         };
 
         private static readonly string[] PotionLines = new string[]
@@ -373,11 +391,13 @@ namespace Server.Scripts.Custom
         private static readonly string[] CureSpellLines = new string[] { "An Nox!", "The poison leaves you." };
         private static readonly string[] OutdoorChat = new string[] { "Nice weather.", "The wind is cold.", "I hate the rain." };
         
+        // Contextual Reactions
         private static readonly string[] HeroicGreetings = new string[] { "Greetings, hero!", "An honor to see you.", "The legends are true!" };
         private static readonly string[] EvilJeerHero = new string[] { "Look at this 'hero'.", "You don't scare us.", "Go save a cat, hero." };
         private static readonly string[] GoodFearMurderer = new string[] { "A killer! Stay back!", "Guards! Help!", "Don't hurt us!", "Monster!" };
         private static readonly string[] EvilGreetMurderer = new string[] { "Respect, killer.", "Business or pleasure?", "Stay out of our way, red.", "Nice kill count." };
         
+        // Personality Deaths
         private static readonly string[] GreedyDeath = new string[] { "My gold...", "I lost everything...", "Not like this..." };
         private static readonly string[] AggressiveDeath = new string[] { "A glorious death!", "I'll see you in hell!", "Curse you!" };
         private static readonly string[] CautiousDeath = new string[] { "I knew this would happen...", "Should have ran...", "Mistake..." };
@@ -1025,7 +1045,7 @@ namespace Server.Scripts.Custom
                 IntelligentAction.DressUpFighters(this, "", m_IsEvil, false, true); m_CitizenType = (int)CitizenClass.Fighter; AI = AIType.AI_Melee; 
                 
                 SetSkill(SkillName.Swords, baseSkill); 
-                SetSkill(SkillName.Bludgeoning, baseSkill);
+                SetSkill(SkillName.Bludgeoning, baseSkill); 
                 SetSkill(SkillName.Fencing, baseSkill);
                 SetSkill(SkillName.Parry, baseSkill);
                 SetSkill(SkillName.Tactics, baseSkill + 10);
@@ -1130,7 +1150,7 @@ namespace Server.Scripts.Custom
     }
 
     // ========================================================================
-    // 3. Auto Team Maintainer (Manager)
+    // 3. Auto Team Maintainer with Caching (Integrated)
     // ========================================================================
     public static class AutoTeamMaintainer
     {
@@ -1140,7 +1160,7 @@ namespace Server.Scripts.Custom
         private static int s_NextTeamId = 1;
         private static readonly object s_IdLock = new object();
 
-        // Optimized Caching Logic
+        // Optimized Caching
         private static readonly Dictionary<Mobile, CachedCount> s_NearbyCountCache = new Dictionary<Mobile, CachedCount>();
         private static readonly TimeSpan CountCacheDuration = TimeSpan.FromSeconds(5);
 
@@ -1269,13 +1289,13 @@ namespace Server.Scripts.Custom
                 int x = nearPlayer.X + (int)(Math.Cos(ang) * dist);
                 int y = nearPlayer.Y + (int)(Math.Sin(ang) * dist);
                 Point3D p = new Point3D(x, y, map.GetAverageZ(x, y));
-                if (IsInForbiddenForbidden(p, map)) continue;
+                if (IsInForbiddenRegion(p, map)) continue;
                 if (map.CanSpawnMobile(p)) return p;
             }
             return Point3D.Zero;
         }
 
-        private static bool IsInForbiddenForbidden(Point3D loc, Map map)
+        private static bool IsInForbiddenRegion(Point3D loc, Map map)
         {
             Region reg = Region.Find(loc, map);
             if (reg == null) return false;
