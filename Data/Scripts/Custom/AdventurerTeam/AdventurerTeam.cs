@@ -5,7 +5,7 @@ using Server.Items;
 using Server.Mobiles;
 using Server.Network;
 using Server.Regions;
-using Server.Misc;
+using Server.Misc; 
 using Server.ContextMenus; 
 
 namespace Server.Scripts.Custom
@@ -114,7 +114,6 @@ namespace Server.Scripts.Custom
                 return;
             }
 
-            // Lost Master Grace Period logic (~15 sec)
             if (ControlMaster == null || ControlMaster.Deleted || ControlMaster.Map != this.Map || !ControlMaster.InRange(this, 40))
             {
                 m_LostCounter++;
@@ -257,7 +256,7 @@ namespace Server.Scripts.Custom
     [CorpseName("an adventurer corpse")]
     public class AdventurerTeam : BaseCreature
     {
-        #region 1. Dialogue & Text Data (Expanded & Rich)
+        #region 1. Dialogue & Text Data
         private static readonly string[] FriendlyChat = new string[] 
         { 
             "The wyrms in the deep caves grow bolder each day...",
@@ -391,13 +390,11 @@ namespace Server.Scripts.Custom
         private static readonly string[] CureSpellLines = new string[] { "An Nox!", "The poison leaves you." };
         private static readonly string[] OutdoorChat = new string[] { "Nice weather.", "The wind is cold.", "I hate the rain." };
         
-        // Contextual Reactions
         private static readonly string[] HeroicGreetings = new string[] { "Greetings, hero!", "An honor to see you.", "The legends are true!" };
         private static readonly string[] EvilJeerHero = new string[] { "Look at this 'hero'.", "You don't scare us.", "Go save a cat, hero." };
         private static readonly string[] GoodFearMurderer = new string[] { "A killer! Stay back!", "Guards! Help!", "Don't hurt us!", "Monster!" };
         private static readonly string[] EvilGreetMurderer = new string[] { "Respect, killer.", "Business or pleasure?", "Stay out of our way, red.", "Nice kill count." };
         
-        // Personality Deaths
         private static readonly string[] GreedyDeath = new string[] { "My gold...", "I lost everything...", "Not like this..." };
         private static readonly string[] AggressiveDeath = new string[] { "A glorious death!", "I'll see you in hell!", "Curse you!" };
         private static readonly string[] CautiousDeath = new string[] { "I knew this would happen...", "Should have ran...", "Mistake..." };
@@ -521,7 +518,6 @@ namespace Server.Scripts.Custom
             if (member != null && member != this && !m_MySquad.Contains(member))
             {
                 m_MySquad.Add(member);
-                // Sync personality
                 member.Personality = this.Personality; 
             }
         }
@@ -553,6 +549,19 @@ namespace Server.Scripts.Custom
             }
             return count;
         }
+
+        // [NEW] Event-driven heal request
+        public void ReceiveHealRequest(Mobile target)
+        {
+            if (Deleted || !Alive || m_CitizenType != (int)CitizenClass.Wizard) return;
+            if (Mana < 15) return;
+            
+            // Simple throttle for response
+            if (DateTime.UtcNow < m_NextHealCheck) return;
+
+            CastSupportSpell(target, false);
+            m_NextHealCheck = DateTime.UtcNow + TimeSpan.FromSeconds(3.0);
+        }
         #endregion
 
         #region 6. Core Logic (OnThink)
@@ -564,7 +573,7 @@ namespace Server.Scripts.Custom
 
             DateTime now = DateTime.UtcNow;
 
-            // 1. Sector Sleep
+            // 1. Sector Sleep (Optimization)
             Sector sector = Map.GetSector(this);
             if (sector != null && !sector.Active)
             {
@@ -580,6 +589,21 @@ namespace Server.Scripts.Custom
             {
                 if (now < m_NextIdleThink) return;
                 m_NextIdleThink = now + TimeSpan.FromSeconds(1.5);
+                
+                // [NEW] Chain Aggro: Check if any squad member is fighting
+                if (m_MySquad.Count > 0 && Utility.RandomDouble() < 0.5) // 50% check chance
+                {
+                    foreach (var member in m_MySquad)
+                    {
+                        if (member != null && !member.Deleted && member.Combatant != null && 
+                            member.Map == Map && member.InRange(this, 12))
+                        {
+                            Combatant = member.Combatant;
+                            if (CanSendMessage(now)) Say(GetPooledMessage(CombatYell));
+                            break;
+                        }
+                    }
+                }
             }
 
             // 3. Environment Checks
@@ -603,7 +627,7 @@ namespace Server.Scripts.Custom
                         if (item is Corpse && Utility.RandomDouble() < lootChance) 
                         {
                             Animate(32, 5, 1, true, false, 0); 
-                            PlaySound(0x57); 
+                            PlaySound(0x57); // Loot sound
                             if (CanSendMessage(now)) Say(GetPooledMessage(LootChat));
                             break;
                         }
@@ -623,14 +647,7 @@ namespace Server.Scripts.Custom
                 }
             }
 
-            // 5. Squad Support
-            if (now > m_NextHealCheck)
-            {
-                m_NextHealCheck = now + TimeSpan.FromSeconds(2.5);
-                PerformSquadSupport(now);
-            }
-
-            // 6. Class Logic
+            // 5. Class Logic
             if (m_CitizenType == 3 && !m_IsRetreating && Hits < HitsMax)
                 Server.Misc.IntelligentAction.HideFromOthers(this);
 
@@ -638,7 +655,7 @@ namespace Server.Scripts.Custom
                 if (Combatant.GetDistanceToSqrt(this) > 4 && Utility.RandomDouble() < 0.05)
                     Server.Misc.IntelligentAction.LeapToAttacker(this, Combatant);
 
-            // 7. Panic/Retreat
+            // 6. Panic/Retreat
             if (Combatant != null && !m_IsRetreating && Hits < HitsMax)
             {
                 double panicChance = 0.2;
@@ -661,7 +678,7 @@ namespace Server.Scripts.Custom
                 else { Combatant = null; Warmode = false; return; }
             }
 
-            // 8. Timed Departure
+            // 7. Timed Departure
             if (!m_IsLeaving && m_TeamId != 0 && now > m_PendingDeparture)
             {
                 if (Combatant == null && Utility.RandomDouble() < 0.02)
@@ -672,7 +689,7 @@ namespace Server.Scripts.Custom
                 }
             }
 
-            // 9. Idle Chatter
+            // 8. Idle Chatter
             if (Combatant == null && now > m_NextChatTime)
             {
                 if (CanSendMessage(now))
@@ -745,28 +762,6 @@ namespace Server.Scripts.Custom
                     }); 
                 } 
             } 
-        }
-
-        private void PerformSquadSupport(DateTime now) 
-        { 
-            if (m_CitizenType != (int)CitizenClass.Wizard || Mana < 15) return; 
-            
-            AdventurerTeam target = null; 
-            bool isCure = false; 
-            
-            for (int i = m_MySquad.Count - 1; i >= 0; i--) 
-            { 
-                AdventurerTeam ally = m_MySquad[i]; 
-                if (ally == null || ally.Deleted) { m_MySquad.RemoveAt(i); continue; } 
-                
-                if (ally.Alive && ally.Map == this.Map && ally.InRange(this, 12) && CanSee(ally)) 
-                { 
-                    if (ally.Poisoned) { target = ally; isCure = true; break; } 
-                    if (ally != this && ally.Hits < (ally.HitsMax * HealAllyThreshold)) { target = ally; isCure = false; } 
-                } 
-            } 
-            
-            if (target != null) CastSupportSpell(target, isCure); 
         }
 
         private void CastSupportSpell(Mobile target, bool isCure) 
@@ -864,6 +859,22 @@ namespace Server.Scripts.Custom
             if (willKill || Deleted) return;
             if (Utility.RandomBool()) PlaySound(GetHurtSound());
 
+            // [NEW] Cry for Help (Event Driven Healing)
+            if (Hits < HitsMax * 0.6)
+            {
+                for (int i = 0; i < m_MySquad.Count; i++)
+                {
+                    AdventurerTeam mate = m_MySquad[i];
+                    if (mate != null && !mate.Deleted && mate.Alive && 
+                        mate.CitizenClass == CitizenClass.Wizard && 
+                        mate.Map == Map && mate.InRange(this, 12))
+                    {
+                        mate.ReceiveHealRequest(this);
+                        break; // Found one healer, good enough
+                    }
+                }
+            }
+
             if (!m_IsRetreating && m_CitizenType != (int)CitizenClass.Fighter && (double)Hits/HitsMax < 0.2)
             {
                if (Utility.RandomDouble() < 0.3) 
@@ -885,7 +896,7 @@ namespace Server.Scripts.Custom
 
             if (CanSendMessage(now) && CanSee(m) && m.InRange(this, 8))
             {
-                m_NextGreetingTime = now + TimeSpan.FromSeconds(15.0);
+                m_NextGreetingTime = now + TimeSpan.FromMinutes(5.0);
                 
                 bool isMurderer = (m.Kills >= 5);
                 bool isHero = (m.Fame >= 10000 && m.Karma >= 5000);
@@ -909,7 +920,12 @@ namespace Server.Scripts.Custom
 
         public override bool IsEnemy(Mobile m)
         {
-            if (m is CaptiveAdventurer) return false;
+            if (m is CaptiveAdventurer) 
+                return false;
+            
+            if (m is AdventurerTeam && ((AdventurerTeam)m).TeamId == this.TeamId)
+                return false;
+
             return base.IsEnemy(m);
         }
         #endregion
@@ -1037,18 +1053,25 @@ namespace Server.Scripts.Custom
             if (type == 0) 
             { 
                 IntelligentAction.DressUpWizards(this, false); m_CitizenType = (int)CitizenClass.Wizard; AI = AIType.AI_Mage; 
-                SetSkill(SkillName.Magery, baseSkill); 
+                SetSkill(SkillName.Psychology, baseSkill);
+                SetSkill(SkillName.Magery, baseSkill);
+                SetSkill(SkillName.Meditation, baseSkill);
+                SetSkill(SkillName.MagicResist, baseSkill);
+                SetSkill(SkillName.FistFighting, baseSkill);
+                SetSkill(SkillName.Tactics, baseSkill - 20);
                 intMax += m_CitizenLevel * 30; 
             }
             else if (type == 1) 
             { 
                 IntelligentAction.DressUpFighters(this, "", m_IsEvil, false, true); m_CitizenType = (int)CitizenClass.Fighter; AI = AIType.AI_Melee; 
                 
-                SetSkill(SkillName.Swords, baseSkill); 
-                SetSkill(SkillName.Bludgeoning, baseSkill); 
                 SetSkill(SkillName.Fencing, baseSkill);
+                SetSkill(SkillName.Bludgeoning, baseSkill);
+                SetSkill(SkillName.Swords, baseSkill);
                 SetSkill(SkillName.Parry, baseSkill);
+                SetSkill(SkillName.MagicResist, baseSkill);
                 SetSkill(SkillName.Tactics, baseSkill + 10);
+                SetSkill(SkillName.Healing, baseSkill + 10);
                 SetSkill(SkillName.Anatomy, baseSkill);
 
                 strMax += m_CitizenLevel * 10; 
@@ -1057,7 +1080,11 @@ namespace Server.Scripts.Custom
             else 
             { 
                 IntelligentAction.DressUpRogues(this, "", m_IsEvil, false, true); m_CitizenType = (int)CitizenClass.Rogue; AI = AIType.AI_Archer; 
-                SetSkill(SkillName.Marksmanship, baseSkill); 
+                SetSkill(SkillName.Marksmanship, baseSkill);
+                SetSkill(SkillName.Tactics, baseSkill);
+                SetSkill(SkillName.MagicResist, baseSkill);
+                SetSkill(SkillName.Healing, baseSkill);
+                SetSkill(SkillName.Anatomy, baseSkill - 10);
                 dexMax += m_CitizenLevel * 10; 
             }
             
@@ -1160,7 +1187,7 @@ namespace Server.Scripts.Custom
         private static int s_NextTeamId = 1;
         private static readonly object s_IdLock = new object();
 
-        // Optimized Caching
+        // Optimized Caching Logic
         private static readonly Dictionary<Mobile, CachedCount> s_NearbyCountCache = new Dictionary<Mobile, CachedCount>();
         private static readonly TimeSpan CountCacheDuration = TimeSpan.FromSeconds(5);
 
@@ -1187,7 +1214,6 @@ namespace Server.Scripts.Custom
                 Mobile m = state.Mobile;
                 if (m != null && m.Player && m.Alive && m.Map != null && m.Map != Map.Internal)
                 {
-                    // Using random chance to distribute load
                     if (Utility.RandomDouble() < 0.6) TrySpawnTeamForPlayer(m);
                 }
             }
